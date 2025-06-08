@@ -161,10 +161,12 @@ class UpdateController extends Controller
             $filePath = 'storage/default/' . $fileName;
     
             // Move file to public/storage/default
-            $file->move(public_path('storage/default'), $fileName);
+           $filePath = $file->storeAs('public/default', $fileName); // stores in storage/app/public/default
+           $publicPath = Storage::url($filePath); // returns "/storage/default/xxxx.jpg"
+
     
             // Update user profile with correct path
-            $user->photo = $filePath;
+            $user->photo = $publicPath;
             $user->save();
     
             return response()->json([
