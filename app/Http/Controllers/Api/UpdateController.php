@@ -135,41 +135,50 @@ class UpdateController extends Controller
         return response()->json(['message' => 'Account deleted successfully'], 200);
     }
     
-  public function updateProfilePhoto(Request $request)
+
+
+public function updateProfilePhoto(Request $request)
 {
     try {
-        // Validate uploaded image
+        // Validate the uploaded photo
         $validator = Validator::make($request->all(), [
-            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors()->first()], 400);
         }
 
+        // Get the authenticated user
         $user = Auth::user();
         if (!$user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        // Save photo directly into public/default/
+        // Get uploaded file
         $file = $request->file('photo');
         $fileName = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
-        $file->move(public_path('default'), $fileName);
 
-        // Save only relative path
-        $user->photo = 'default/' . $fileName;
+        // Store file in storage/app/public/default (via Laravel's filesystem)
+        $filePath = $file->storeAs('public/default', $fileName);
+
+        // Generate public URL ("/storage/default/filename.jpg")
+        $publicPath = Storage::url('default/' . $fileName);
+
+        // Save the new photo path in user profile
+        $user->photo = $publicPath; // example: "/storage/default/1749417656_2.jpeg"
         $user->save();
 
         return response()->json([
             'message' => 'Profile photo updated successfully',
-            'photo_url' => asset($user->photo),
+            'photo_url' => asset($publicPath), // Full URL (https://domain.com/storage/default/...)
             'user' => $user,
-        ]);
+        ], 200);
     } catch (\Exception $e) {
-        return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
     }
 }
+
 
     
     public function removeProfilePhoto(Request $request)
