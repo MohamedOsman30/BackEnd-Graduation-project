@@ -135,49 +135,47 @@ class UpdateController extends Controller
         return response()->json(['message' => 'Account deleted successfully'], 200);
     }
     
-    public function updateProfilePhoto(Request $request)
-    {
-        try {
-            // Validate the uploaded file
-            $validator = Validator::make($request->all(), [
-                'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max file size
-            ]);
-    
-            if ($validator->fails()) {
-                return response()->json(['message' => $validator->errors()->first()], 400);
-            }
-    
-            // Get authenticated user
-            $user = Auth::user();
-            if (!$user) {
-                return response()->json(['message' => 'Unauthorized'], 401);
-            }
-    
-            
-    
-            // Store the new photo
-            $file = $request->file('photo');
-            $fileName = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
-            $filePath = 'storage/default/' . $fileName;
-    
-            // Move file to public/storage/default
-           $filePath = $file->storeAs('public/default', $fileName); // stores in storage/app/public/default
-           $publicPath = Storage::url($filePath); // returns "/storage/default/xxxx.jpg"
+  public function updateProfilePhoto(Request $request)
+  {
+    try {
+        // Validate the uploaded photo
+        $validator = Validator::make($request->all(), [
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+        ]);
 
-    
-            // Update user profile with correct path
-            $user->photo = $publicPath;
-            $user->save();
-    
-            return response()->json([
-                'message' => 'Profile photo updated successfully',
-                'photo_url' => asset($filePath), // Returns accessible URL
-                'user' => $user,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 400);
         }
+
+        // Get the authenticated user
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Get uploaded file
+        $file = $request->file('photo');
+        $fileName = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
+
+        // Store file in storage/app/public/default (via Laravel's filesystem)
+        $filePath = $file->storeAs('public/default', $fileName);
+
+        // Generate public URL ("/storage/default/filename.jpg")
+        $publicPath = Storage::url('default/' . $fileName);
+
+        // Save the new photo path in user profile
+        $user->photo = $publicPath; // example: "/storage/default/1749417656_2.jpeg"
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile photo updated successfully',
+            'photo_url' => asset($publicPath), // Full URL (https://domain.com/storage/default/...)
+            'user' => $user,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
     }
+ }
     
     public function removeProfilePhoto(Request $request)
     {
