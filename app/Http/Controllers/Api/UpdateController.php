@@ -160,7 +160,7 @@ public function updateProfilePhoto(Request $request)
         $fileName = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
 
         // Store file in storage/app/public/default (via Laravel's filesystem)
-        $filePath = $file->storeAs('public/storage/default', $fileName);
+        $filePath = $file->storeAs('storage/default', $fileName);
 
         // Generate public URL ("/storage/default/filename.jpg")
         $publicPath = Storage::url('default/' . $fileName);
