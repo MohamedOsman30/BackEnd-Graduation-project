@@ -1,0 +1,8 @@
+{
+  "build": {
+    "commands": [
+      "php artisan storage:link",
+      "chmod -R 775 storage"
+    ]
+  }
+}
