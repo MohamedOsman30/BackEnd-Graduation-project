@@ -137,41 +137,46 @@ class UpdateController extends Controller
     
 
 
-public function updateProfilePhoto(Request $request)
+ public function updateProfilePhoto(Request $request)
     {
         try {
-            // Validate the uploaded file
+            // Validate the uploaded photo
             $validator = Validator::make($request->all(), [
-                'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // 2MB max file size
+                'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
             ]);
-    
+
             if ($validator->fails()) {
                 return response()->json(['message' => $validator->errors()->first()], 400);
             }
-    
-            // Get authenticated user
+
+            // Get the authenticated user
             $user = Auth::user();
             if (!$user) {
                 return response()->json(['message' => 'Unauthorized'], 401);
             }
-    
-            
-    
-            // Store the new photo
+
+            // Get uploaded file
             $file = $request->file('photo');
             $fileName = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
-            $filePath = 'storage/default/' . $fileName;
-    
-            // Move file to public/storage/default
-            $file->move(public_path('storage/default'), $fileName);
-    
-            // Update user profile with correct path
-            $user->photo = $filePath;
+
+            // Store file in storage/app/public/default
+            // This ensures the file is placed in the correct location for public access
+            $pathInStoragePublic = 'default'; // The subfolder within storage/app/public
+            $filePath = Storage::disk('public')->putFileAs($pathInStoragePublic, $file, $fileName);
+
+            // Generate public URL relative to the public/storage symlink
+            // This will typically be like /storage/default/filename.jpg
+            $publicPhotoUrl = Storage::url($filePath);
+
+            // Save the new photo path in user profile
+            // It's best to save the public path or a path easily convertible to it.
+            // Storing the relative path from the 'public' disk root is ideal.
+            $user->photo = $publicPhotoUrl; // Example: "/storage/default/1749417656_2.jpeg"
             $user->save();
-    
+
             return response()->json([
                 'message' => 'Profile photo updated successfully',
-                'photo_url' => asset($filePath), // Returns accessible URL
+                'photo_url' => asset($publicPhotoUrl), // This will generate the full URL
                 'user' => $user,
             ], 200);
         } catch (\Exception $e) {
