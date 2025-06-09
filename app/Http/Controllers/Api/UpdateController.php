@@ -156,8 +156,8 @@ public function updateProfilePhoto(Request $request)
         $file = $request->file('photo');
         $fileName = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
 
-        // Correct storage path (public disk)
-        $file->storeAs('public/default', $fileName); 
+        // Store in public disk (storage/app/public/default)
+        $file->storeAs('default', $fileName, 'public');  // Changed this line
 
         // Save relative path to database
         $user->photo = 'default/' . $fileName;
@@ -165,7 +165,7 @@ public function updateProfilePhoto(Request $request)
 
         return response()->json([
             'message' => 'Profile photo updated successfully',
-            'photo_url' => Storage::url('default/' . $fileName),
+            'photo_url' => Storage::disk('public')->url('default/' . $fileName),  // Explicit public disk
             'user' => $user,
         ], 200);
     } catch (\Exception $e) {
