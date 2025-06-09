@@ -160,18 +160,18 @@ public function updateProfilePhoto(Request $request)
         $fileName = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
 
         // Store file in storage/app/public/default (via Laravel's filesystem)
-        $filePath = $file->storeAs('public/default', $fileName);
+        $filePath = $file->storeAs('public/storage/default', $fileName);
 
         // Generate public URL ("/storage/default/filename.jpg")
         $publicPath = Storage::url('default/' . $fileName);
 
         // Save the new photo path in user profile
-        $user->photo = $publicPath; // example: "/storage/default/1749417656_2.jpeg"
+        $user->photo = $filePath; // example: "/storage/default/1749417656_2.jpeg"
         $user->save();
 
         return response()->json([
             'message' => 'Profile photo updated successfully',
-            'photo_url' => asset($publicPath), // Full URL (https://domain.com/storage/default/...)
+            'photo_url' => asset($filePath), // Full URL (https://domain.com/storage/default/...)
             'user' => $user,
         ], 200);
     } catch (\Exception $e) {
